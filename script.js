@@ -74,42 +74,220 @@ Object.defineProperty(this, "defaultLocation", {
 //stopwatch Excersice
 //------------------------------------------------------------------------//
 function StopWatch() {
-    let startTme,
+    let startTime,
         endTime,
         running,
         duration = 0;
-
-    this.start = function () {
-        if (running) {
-            throw new Error(`stopwatch is already running`);
-        }
-        running = true;
-        startTme = new Date();
-        console.log(startTme);
-    };
-
-    this.stop = function () {
-        if (!running) {
-            throw new Error(`Stopwatch is stopped`);
-        }
-        running = false;
-        endTime = new Date();
-        const seconds = (endTime.getTime() - startTme.getTime()) / 1000;
-        duration += seconds;
-    };
-
-    this.reset = function () {
-        startTme = null;
-        endTime = null;
-        running = false;
-        duration = 0;
-    };
 
     Object.defineProperty(this, "duration", {
         get: function () {
             return duration;
         },
+        set: function (value) {
+            duration = value;
+        },
+    });
+    Object.defineProperty(this, "startTime", {
+        get: function () {
+            return startTime;
+        },
+    });
+    Object.defineProperty(this, "endTime", {
+        get: function () {
+            return endTime;
+        },
+    });
+    Object.defineProperty(this, "running", {
+        get: function () {
+            return running;
+        },
     });
 }
 
+StopWatch.prototype.stop = function () {
+    if (!running) {
+        throw new Error(`Stopwatch is stopped`);
+    }
+    this.running = false;
+    this.endTime = new Date();
+    const seconds = (endTime.getTime() - startTme.getTime()) / 1000;
+    this.duration += seconds;
+};
+
+StopWatch.prototype.reset = function () {
+    this.startTme = null;
+    this.endTime = null;
+    this.running = false;
+    this.duration = 0;
+};
+StopWatch.prototype.start = function () {
+    if (running) {
+        throw new Error(`stopwatch is already running`);
+    }
+    this.running = true;
+    this.startTme = new Date();
+    console.log(startTme);
+};
+
 const SW = new StopWatch();
+
+//------------------------------------------------------------//
+//Prototypes
+//------------------------------------------------------------//
+// Every object (except the root object) has a prototype (parent).
+// To get the prototype of an object:
+let obj = {};
+Object.getPrototypeOf(obj);
+
+// In Chrome, you can inspect "__proto__" property. But you should
+// not use that in the code.
+
+// To get the attributes of a property:
+Object.getOwnPropertyDescriptor(obj, "propertyName");
+
+// To set the attributes for a property:
+Object.defineProperty(obj, "propertyName", {
+    configurable: false, // cannot be deleted
+    writable: false,
+    enumerable: false,
+});
+
+// Constructors have a "prototype" property. It returns the object
+// that will be used as the prototype for objects created by the constructor.
+Object.prototype === Object.getPrototypeOf({});
+Array.prototype === Object.getPrototypeOf([]);
+
+// All objects created with the same constructor will have the same prototype.
+// A single instance of this prototype will be stored in the memory.
+const z = {};
+const y = {};
+Object.getPrototypeOf(z) === Object.getPrototypeOf(y); // returns true
+
+// Any changes to the prototype will be immediately visible to all objects
+// referencing this prototype.
+
+// When dealing with large number of objects, it's better to put their
+// methods on their prototype. This way, a single instance of the methods
+// will be in the memory.
+Circle.prototype.draw = function () {};
+
+// To get the own/instance properties:
+Object.keys(obj);
+
+// To get all the properties (own + prototype):
+for (let key in obj) {
+}
+
+//-------------------------------------------------------------//
+//Prototypical Inheritance
+//-------------------------------------------------------------//
+
+function Shape() {}
+function Circle() {}
+
+// Prototypical inheritance
+Circle.prototype = Object.create(Shape.prototype);
+Circle.prototype.constructor = Circle;
+
+function Rectangle(color) {
+    // To call the super constructor
+    Shape.call(this, color);
+}
+
+// Method overriding
+Shape.prototype.draw = function () {};
+Circle.prototype.draw = function () {
+    // Call the base implementation
+    Shape.prototype.draw.call(this);
+
+    // Do additional stuff here
+};
+
+// Don't create large inheritance hierarchies.
+// One level of inheritance is fine.
+
+// Use mixins to combine multiple objects
+// and implement composition in JavaScript.
+const canEat = {
+    eat: function () {},
+};
+
+const canWalk = {
+    walk: function () {},
+};
+
+function mixin(target, ...sources) {
+    // Copies all the properties from all the source objects
+    // to the target object.
+    Object.assign(target, ...sources);
+}
+
+function Person() {}
+
+mixin(Person.prototype, canEat, canWalk);
+
+//---------------------------------------------------------------------//
+//Classes
+//---------------------------------------------------------------------//
+
+class Circle {
+    constructor(radius) {
+        this.radius = radius;
+    }
+
+    // These methods will be added to the prototype.
+    draw() {}
+
+    // This will be available on the Circle class (Circle.parse())
+    static parse(str) {}
+}
+
+// Using symbols to implement private properties and methods
+const _size = Symbol();
+const _draw = Symbol();
+
+class Square {
+    constructor(size) {
+        // "Kind of" private property
+        this[_size] = size;
+    }
+
+    // "Kind of" private method
+    [_draw]() {}
+
+    // By "kind of" I mean: these properties and methods are essentally
+    // part of the object and are accessible from the outside. But accessing
+    // them is hard and awkward.
+}
+
+// using WeakMaps to implement private properties and methods
+const _width = new WeakMap();
+
+class Rectangle {
+    constructor(width) {
+        _width.set(this, width);
+    }
+
+    draw() {
+        console.log("Rectangle with width" + _width.get(this));
+    }
+}
+
+// WeakMaps give us better protection than symbols. There is no way
+// to access private members implemented using WeakMaps from the
+// outside of an object.
+
+// Inheritance
+class Triangle extends Shape {
+    constructor(color) {
+        // To call the base constructor
+        super(color);
+    }
+
+    draw() {
+        // Call the base method
+        super.draw();
+
+        // Do some other stuff here
+    }
+}
